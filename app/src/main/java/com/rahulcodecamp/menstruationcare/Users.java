@@ -13,6 +13,14 @@ public class Users {  // we need this model class to crate database having these
 
     }
 
+    public Users(String uid, String name, String phoneNo, String address, String imageUri) {
+        this.uid = uid;
+        this.name = name;
+        this.phoneNo = phoneNo;
+        this.address = address;
+        this.imageUri = imageUri;
+    }
+
     public Users(String uid, String name, String phoneNo, String address, String email, String imageUri) {
         this.uid = uid;
         this.name = name;

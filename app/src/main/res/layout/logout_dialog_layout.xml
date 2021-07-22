@@ -50,7 +50,8 @@
             android:layout_margin="12sp"
             android:background="@drawable/yes_no_btn"
             android:text="Yes"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            app:backgroundTint="#CD1212" />
 
     </LinearLayout>
 

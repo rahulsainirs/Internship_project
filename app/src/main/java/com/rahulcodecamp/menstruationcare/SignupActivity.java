@@ -3,15 +3,21 @@ package com.rahulcodecamp.menstruationcare;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,6 +36,8 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.hbb20.CountryCodePicker;
 import com.mikhaellopez.circularimageview.CircularImageView;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -39,11 +47,16 @@ public class SignupActivity extends AppCompatActivity {
     LottieAnimationView signupBackground;
 
     Button signupButton;
-    TextView signInTextView, phoneTextView;
+    TextView signInTextView;
     EditText nameEditText, addressEditText, phoneEditText, emailEditText, passwordEditText;
     CountryCodePicker ccp;
 
+    LinearLayout signUpWithPhoneLayout;
+
     CircularImageView profileImageView;
+    private static final int PERMISSION_FILE = 23;  // for taking image
+    private static final int ACCESS_FILE = 43;
+
     String emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+";
 
     String imageURI; // To store default image uri/firebase image token i.e.,default profile_image
@@ -83,6 +96,8 @@ public class SignupActivity extends AppCompatActivity {
         ccp = findViewById(R.id.ccp);
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
+
+        signUpWithPhoneLayout = findViewById(R.id.signUpWithPhoneLayout);
 
         signupButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -218,13 +233,28 @@ public class SignupActivity extends AppCompatActivity {
             }
         });
 
+        signUpWithPhoneLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(SignupActivity.this, PhoneSignupActivity.class));
+            }
+        });
+
         profileImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setType("image/*");
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(intent, "Select Picture"), 10);
+                // image picker
+                if(ContextCompat.checkSelfPermission(SignupActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+                    ActivityCompat.requestPermissions(SignupActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_FILE);
+                }
+                else {
+                    Intent intent = new Intent();
+                    intent.setType("image/*");
+                    intent.setAction(Intent.ACTION_PICK);
+                    startActivityForResult(Intent.createChooser(intent, "Select Picture"), ACCESS_FILE);
+
+
+                }
             }
 
         });
@@ -234,17 +264,29 @@ public class SignupActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable @org.jetbrains.annotations.Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == 10){
-            if (data != null){
-                imageUri = data.getData();
-                profileImageView.setImageURI(imageUri);
+        // for cropped image picking
+        if (requestCode == ACCESS_FILE && resultCode == Activity.RESULT_OK && data != null && data.getData() != null){
+            imageUri = data.getData();
+            CropImage.activity(imageUri)
+                    .setGuidelines(CropImageView.Guidelines.ON)
+                    .setCropShape(CropImageView.CropShape.OVAL)
+                    .setActivityTitle("Crop Image")
+                    .setFixAspectRatio(true)
+                    .setCropMenuCropButtonTitle("Done")
+                    .start(this);
+        }
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == RESULT_OK) {
+                imageUri = result.getUri();
+                profileImageView.setImageURI(imageUri); // setting image
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                Exception error = result.getError();
+                Toast.makeText(this, error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
 
     }
-
-
 
     @Override
     public void onBackPressed() {

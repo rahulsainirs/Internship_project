@@ -61,6 +61,7 @@ public class HomeActivity extends AppCompatActivity {
 
         FirebaseUser currentUser = auth.getCurrentUser();
 
+
         drawerLayout = findViewById(R.id.drawerLayout);
         toolbar = findViewById(R.id.toolBar);
         navigationView = findViewById(R.id.navigationView);
@@ -118,24 +119,22 @@ public class HomeActivity extends AppCompatActivity {
         progressDialog.setMessage("please wait...");
         progressDialog.setCancelable(false);
 
-        progressDialog.show();
+//        progressDialog.show();    will use it later
 
 
         if (currentUser == null){
-            progressDialog.dismiss();
+            Toast.makeText(this, "Current user == null", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(HomeActivity.this, LoginActivity.class));
         }
 
-        else if (!currentUser.isEmailVerified()){
-            progressDialog.dismiss();
+        else if (!currentUser.isEmailVerified() && currentUser.getPhoneNumber().isEmpty()){
+
             Toast.makeText(this, "your email is not verified", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(HomeActivity.this, LoginActivity.class));
             finish();
 
         }
-        else if (currentUser.isEmailVerified()){
-            progressDialog.dismiss();
-
+        else if (currentUser.isEmailVerified() && currentUser.getPhoneNumber().isEmpty()){
             Toast.makeText(this, "Email is verified", Toast.LENGTH_SHORT).show();
 
             DatabaseReference databaseReference = firebaseDatabase.getReference().child("user");
@@ -144,26 +143,54 @@ public class HomeActivity extends AppCompatActivity {
                 @Override
                 public void onDataChange(@NonNull @NotNull DataSnapshot snapshot) {
                     for (DataSnapshot dataSnapshot: snapshot.getChildren() ){
-                        try {
-                            if (dataSnapshot.getKey().equals(currentUser.getUid())){
-                                Toast.makeText(HomeActivity.this, "uid matched", Toast.LENGTH_SHORT).show();
-                                profileItems = new ArrayList<>();
-                                profileItems.add(dataSnapshot.child("name").getValue().toString());
-                                profileItems.add(dataSnapshot.child("email").getValue().toString());
+                        if (dataSnapshot.getKey().equals(currentUser.getUid())){
+//                            Toast.makeText(HomeActivity.this, "uid matched", Toast.LENGTH_SHORT).show();
+                            profileItems = new ArrayList<>();
+                            profileItems.add(dataSnapshot.child("name").getValue().toString());
+                            profileItems.add(dataSnapshot.child("email").getValue().toString());
+                            profileItems.add(dataSnapshot.child("imageUri").getValue().toString());
 
-                                profileItems.add(dataSnapshot.child("imageUri").getValue().toString());
+                            TextView nameTextView = findViewById(R.id.nameTextView);
+                            TextView emailOrPhoneTextView = findViewById(R.id.emailOrPhoneTextView);
+                            CircularImageView profileImageView = findViewById(R.id.profileImageView);
 
-                                TextView nameTextView = findViewById(R.id.nameTextView);
-                                TextView emailTextView = findViewById(R.id.emailTextView);
-                                CircularImageView profileImageView = findViewById(R.id.profileImageView);
-
-                                nameTextView.setText(profileItems.get(0));
-                                emailTextView.setText(profileItems.get(1));
-                                Picasso.get().load(profileItems.get(2)).into(profileImageView);
-                            }
+                            nameTextView.setText(profileItems.get(0));
+                            emailOrPhoneTextView.setText(profileItems.get(1));
+                            Picasso.get().load(profileItems.get(2)).into(profileImageView);
                         }
-                        catch (Exception e){
-                            Toast.makeText(HomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull @NotNull DatabaseError error) {
+
+                }
+            });
+        }
+        else if (currentUser.getPhoneNumber() != null){
+            Toast.makeText(this, "PhoneAuth user", Toast.LENGTH_SHORT).show();
+
+            DatabaseReference databaseReference = firebaseDatabase.getReference().child("user");
+
+            databaseReference.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull @NotNull DataSnapshot snapshot) {
+                    for (DataSnapshot dataSnapshot: snapshot.getChildren() ){
+                        if (dataSnapshot.getKey().equals(currentUser.getUid())){
+//                            Toast.makeText(HomeActivity.this, "uid matched", Toast.LENGTH_SHORT).show();
+                            profileItems = new ArrayList<>();
+                            profileItems.add(dataSnapshot.child("name").getValue().toString());
+                            profileItems.add(dataSnapshot.child("phoneNo").getValue().toString());
+                            profileItems.add(dataSnapshot.child("imageUri").getValue().toString());
+
+                            TextView nameTextView = findViewById(R.id.nameTextView);
+                            TextView emailOrPhoneTextView = findViewById(R.id.emailOrPhoneTextView);
+                            CircularImageView profileImageView = findViewById(R.id.profileImageView);
+
+                            nameTextView.setText(profileItems.get(0));
+                            emailOrPhoneTextView.setText(profileItems.get(1));
+                            Picasso.get().load(profileItems.get(2)).into(profileImageView);
                         }
                     }
                 }
@@ -175,9 +202,9 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
         else {
-            progressDialog.dismiss();
             Toast.makeText(this, "Verify your email", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(HomeActivity.this, LoginActivity.class));
+            finish();
         }
     }
 

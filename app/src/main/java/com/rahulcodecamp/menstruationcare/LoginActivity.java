@@ -8,33 +8,22 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.airbnb.lottie.LottieAnimationView;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -42,10 +31,8 @@ import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
     TextView signupTextView, forgotPasswordTextView;
-    EditText emailEditText, passwordEditText;
+    EditText emailEditText, passwordEditText, resetPasswordEditText;
     Button loginButton;
-    EditText resetPasswordEditText;
-
 
     LinearLayout phoneLoginLayout;
 
@@ -59,12 +46,12 @@ public class LoginActivity extends AppCompatActivity {
     FirebaseAuth auth;
     FirebaseDatabase firebaseDatabase;
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        phoneLoginLayout = findViewById(R.id.phoneLoginLayout);
 
         loginBackground = findViewById(R.id.loginBackground);
 
@@ -73,10 +60,10 @@ public class LoginActivity extends AppCompatActivity {
         progressDialog.setCancelable(false);
 
         signupTextView = findViewById(R.id.signupTextView);
-        forgotPasswordTextView = findViewById(R.id.forgotPasswordTextView);
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
+        forgotPasswordTextView = findViewById(R.id.forgotPasswordTextView);
 
         auth = FirebaseAuth.getInstance();
 
@@ -147,6 +134,8 @@ public class LoginActivity extends AppCompatActivity {
                                     });
                                 }
                                 else {
+                                    progressDialog.dismiss();
+
                                     startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                                     Toast.makeText(LoginActivity.this, "Logged in successfully", Toast.LENGTH_SHORT).show();
                                 }
@@ -171,22 +160,30 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        phoneLoginLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(LoginActivity.this, PhoneLoginActivity.class));
+                finish();
+            }
+        });
+
         forgotPasswordTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Dialog dialog = new Dialog(LoginActivity.this,R.style.Dialog);
                 dialog.setContentView(R.layout.reset_password_dialog_layout);
-                Button resetN0Button, resetYesButton;
-                resetN0Button = dialog.findViewById(R.id.resetNoButton);
-                resetYesButton = dialog.findViewById(R.id.resetYesButton);
+                Button cancelButton, confirmButton;
+                cancelButton = dialog.findViewById(R.id.cancelButton);
+                confirmButton = dialog.findViewById(R.id.confirmButton);
 
-                resetN0Button.setOnClickListener(new View.OnClickListener() {
+                cancelButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         dialog.dismiss();
                     }
                 });
-                resetYesButton.setOnClickListener(new View.OnClickListener() {
+                confirmButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         resetPasswordEditText = dialog.findViewById(R.id.resetPasswordEditText);
@@ -214,7 +211,6 @@ public class LoginActivity extends AppCompatActivity {
                 dialog.show();
             }
         });
-
     }
 
     @Override
@@ -222,5 +218,4 @@ public class LoginActivity extends AppCompatActivity {
         startActivity(new Intent(LoginActivity.this, SignupActivity.class));
         super.onBackPressed();
     }
-
 }
